@@ -46,10 +46,13 @@ verify_finasu_native_susfs() {
 
   # extension/susfs.c 提供 50_add 主补丁在 fs/exec.c 内联调用的全部入口点，缺失会在
   # vmlinux 链接阶段报 undefined symbol，这里提前校验
-  for SYM in ksu_handle_execveat ksu_handle_execveat_sucompat ksu_handle_post_execveat_sucompat \
-             ksu_setup_preinit_file ksu_preinit_handle_post_execveat; do
+  for SYM in ksu_handle_execveat ksu_handle_execveat_sucompat ksu_handle_post_execveat_sucompat; do
     grep -qE "^(int|void) $SYM\(" "$FINASU_KSU/extension/susfs.c" \
       || { echo "::error::FinaSU extension/susfs.c 缺少全局入口点: $SYM" >&2; exit 1; }
+  done
+  for SYM in ksu_setup_preinit_file ksu_preinit_handle_post_execveat; do
+    grep -qE "^(int|void) $SYM\(" "$FINASU_KSU/preinit/preinit.c" \
+      || { echo "::error::FinaSU preinit/preinit.c 缺少全局入口点: $SYM" >&2; exit 1; }
   done
 
   # 三参数 SUSFS 实现（内核侧 kernel/sys.c 的 3 参调用依赖该签名）
