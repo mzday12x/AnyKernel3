@@ -755,6 +755,14 @@ if [[ "$ANDROID_VERSION" == "android16" && "$KERNEL_VERSION" == "6.12" ]]; then
   fi
 fi
 
+# FinaSU 原生 SUSFS：fs/susfs.c 的 ksu domain 辅助函数在部分 Kconfig 组合下未被引用，
+# -Werror 会把 unused-function 视为错误，统一加 __maybe_unused 豁免
+if [ -f fs/susfs.c ]; then
+  sed -i '/^static.*susfs_switch_to_ksu_domain(/ s/^static/static __maybe_unused/' fs/susfs.c
+  sed -i '/^static.*susfs_restore_creds(/ s/^static/static __maybe_unused/' fs/susfs.c
+  echo "已豁免 susfs.c unused function (ksu domain helpers)"
+fi
+
 # 守护：主补丁若再次因上下文漂移漏掉 susfs_def.h，在这里给出可读错误，
 # 而不是等到编译 fs/proc/task_mmu.c 时才报一串 SUSFS_IS_INODE_* 隐式声明
 for SUSFS_SRC in fs/proc/task_mmu.c fs/namespace.c; do
